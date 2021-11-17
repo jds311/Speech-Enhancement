@@ -56,3 +56,34 @@ plot(1:signal_len,y(1:signal_len),1:signal_len,clean_signal(1:signal_len)), grid
 title('Noisy signal vs Clean Signal using Spectral Subtraction');
 xlabel('Samples');ylabel('Amplitude');
 audiowrite('14253291_ss.wav',clean_signal,fs);
+
+
+%%%%%%%%%  Wiener Filtering  %%%%%%%%
+
+Y_psd=mean(Ymag_spec(1:num_frames,:));
+H_w = (Y_psd-noise_psd)./ Y_psd;
+figure(2);
+subplot(3,1,2);
+plot(H_w);
+title('Wiener Filter');
+xlabel('Samples');ylabel('Amplitude');
+Hw_frames= repmat(H_w, size(frames, 1), 1);
+Sw_frames= Y_spec.* Hw_frames;
+figure(2);
+subplot(3,1,3);
+plot(abs(Sw_frames(noise_frames,:)));
+title('Magnitude Spectrum of clean signal of a single frame');
+xlabel('Samples');ylabel('Amplitude');
+Sw_frames= ifft(Sw_frames,frame_len,2);
+Sn = zeros(1,padded_len);
+for i = 1:num_frames
+        Sn(indices(i,:)) = Sn(indices(i,:)) + Sw_frames(i,:);
+end
+Sn = Sn./window_correction;
+figure(3);
+subplot(2,1,2);
+plot(1:signal_len,y(1:signal_len),1:signal_len,Sn(1:signal_len)), grid
+title('Noisy signal vs Clean Signal using Wiener Filtering');
+xlabel('Samples');ylabel('Amplitude');
+axis([0 signal_len -1.5 2.5]);
+audiowrite('14253291_wf.wav',Sn,fs);
