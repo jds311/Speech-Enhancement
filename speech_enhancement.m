@@ -29,3 +29,30 @@ title('Power Spectrum of Noisy signal of a single frame');
 xlabel('Samples');ylabel('Amplitude');
 phase = angle(Y_spec); % phase of noisy signal
 
+%%%%  spectral subtraction %%%%%
+noise_psd = mean(Ymag_spec(1:noise_frames,:));
+clean_spec = Ymag_spec - repmat(noise_psd,size(Ymag_spec,1),1); % subtract noise_est from pspec
+clean_spec(clean_spec < 0) = 0; % negative power spectrum is not allowed
+figure(1);
+subplot(2,1,2);
+plot(clean_spec(noise_frames,:));
+title('Power Spectrum of clean signal of a single frame');
+xlabel('Samples');ylabel('Amplitude');
+j=sqrt(-1);
+reconstructed_frames = ifft(sqrt((clean_spec).*exp(j*phase)),frame_len,2);
+reconstructed_frames = real(reconstructed_frames); 
+clean_signal = zeros(1,padded_len);
+window_correction = zeros(1,padded_len);
+window_fn = hamming(frame_len)';
+for i = 1:num_frames
+    window_correction(indices(i,:)) = window_correction(indices(i,:)) + window_fn;
+    clean_signal(indices(i,:)) = clean_signal(indices(i,:)) + reconstructed_frames(i,:);
+end
+
+clean_signal = clean_signal./window_correction;
+figure(3);
+subplot(2,1,1);
+plot(1:signal_len,y(1:signal_len),1:signal_len,clean_signal(1:signal_len)), grid
+title('Noisy signal vs Clean Signal using Spectral Subtraction');
+xlabel('Samples');ylabel('Amplitude');
+audiowrite('14253291_ss.wav',clean_signal,fs);
